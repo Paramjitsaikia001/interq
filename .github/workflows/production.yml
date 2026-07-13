@@ -10,6 +10,11 @@ jobs:
   build-and-test:
     runs-on: ubuntu-latest
 
+    # make DB/redis URLs available to every step
+    env:
+      DATABASE_URL: postgresql://postgres:postgres_secure_pass@127.0.0.1:5432/interq_test
+      REDIS_URL: redis://127.0.0.1:6379
+
     services:
       postgres:
         image: postgres:16
@@ -20,10 +25,10 @@ jobs:
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U postgres"
+          --health-cmd "pg_isready -U postgres -h 127.0.0.1 -p 5432"
           --health-interval 10s
           --health-timeout 5s
-          --health-retries 10
+          --health-retries 12
 
       redis:
         image: redis:7-alpine
@@ -52,24 +57,38 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y postgresql-client
 
       - name: Wait for Postgres to be ready
-        env:
-          PGPASSWORD: postgres_secure_pass
         run: |
+          set -euo pipefail
+          echo "Waiting for Postgres on 127.0.0.1:5432..."
           for i in {1..60}; do
-            pg_isready -h 127.0.0.1 -p 5432 -U postgres && break
+            pg_isready -h 127.0.0.1 -p 5432 -U postgres && { echo "Postgres ready"; break; }
+            echo "Postgres not ready yet, attempt $i/60"
             sleep 2
           done
-          pg_isready -h 127.0.0.1 -p 5432 -U postgres || (echo "Postgres not ready" && exit 1)
+          pg_isready -h 127.0.0.1 -p 5432 -U postgres || (echo "Postgres not ready after retries" && docker ps --format "table {{.Image}}\t{{.Names}}\t{{.Status}}" && docker logs $(docker ps -q --filter ancestor=postgres:16) || true && exit 1)
+
+      - name: Debug DB connection (quick check)
+        run: |
+          echo "pg_isready output:"
+          pg_isready -h 127.0.0.1 -p 5432 -U postgres || true
+          echo "Attempting psql connection (list databases):"
+          PGPASSWORD=postgres_secure_pass psql -h 127.0.0.1 -U postgres -c '\l' || true
 
       - name: Generate Prisma Client
         run: npx prisma generate
-        env:
-          DATABASE_URL: postgresql://postgres:postgres_secure_pass@localhost:5432/interq_test
+        # DATABASE_URL is provided at job-level (see env above)
 
       - name: Verify Prisma Migration Setup
         run: npx prisma db push --skip-generate
-        env:
-          DATABASE_URL: postgresql://postgres:postgres_secure_pass@localhost:5432/interq_test
+        # DATABASE_URL provided at job-level
+
+      # If you have another step or npm script that runs prisma db push --accept-data-loss,
+      # ensure it runs with DATABASE_URL in the environment. With the job-level env above
+      # this will be available. If the command still fails, add --schema path and debugging:
+      - name: Apply Prisma schema (explicit, will show errors)
+        run: |
+          npx prisma db push --accept-data-loss --schema=./prisma/schema.prisma
+        continue-on-error: false
 
       - name: Run Linter
         run: npm run lint
@@ -78,8 +97,6 @@ jobs:
         run: npm run build
         env:
           NEXT_TELEMETRY_DISABLED: 1
-          DATABASE_URL: postgresql://postgres:postgres_secure_pass@localhost:5432/interq_test
-          REDIS_URL: redis://localhost:6379
           FIREBASE_PROJECT_ID: interq-test-id
           FIREBASE_CLIENT_EMAIL: firebase-adminsdk-fbsvc@interq-test-id.iam.gserviceaccount.com
           FIREBASE_PRIVATE_KEY: "-----BEGIN PRIVATE KEY-----\nMIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQDIK6b8xn3KOlTI\n-----END PRIVATE KEY-----\n"
