@@ -12,13 +12,11 @@ jobs:
 
     services:
       postgres:
-        image: postgres:16-alpine
+        image: postgres:16
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres_secure_pass
           POSTGRES_DB: interq_test
-        ports:
-          - 5432:5432
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
@@ -47,6 +45,19 @@ jobs:
 
       - name: Install Dependencies
         run: npm ci
+
+      - name: Install PostgreSQL client
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+
+      - name: Wait for Postgres to be ready
+        env:
+          PGPASSWORD: postgres_secure_pass
+        run: |
+          for i in {1..30}; do
+            pg_isready -h localhost -p 5432 -U postgres && break
+            sleep 1
+          done
+          pg_isready -h localhost -p 5432 -U postgres || (echo "Postgres not ready" && exit 1)
 
       - name: Generate Prisma Client
         run: npx prisma generate
