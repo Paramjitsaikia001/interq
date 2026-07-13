@@ -25,10 +25,10 @@ jobs:
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U postgres -h 127.0.0.1 -p 5432"
-          --health-interval 10s
+          --health-cmd "pg_isready -U postgres -h localhost -p 5432"
+          --health-interval 5s
           --health-timeout 5s
-          --health-retries 12
+          --health-retries 30
 
       redis:
         image: redis:7-alpine
@@ -61,11 +61,25 @@ jobs:
           set -euo pipefail
           echo "Waiting for Postgres on 127.0.0.1:5432..."
           for i in {1..60}; do
-            pg_isready -h 127.0.0.1 -p 5432 -U postgres && { echo "Postgres ready"; break; }
+            if pg_isready -h 127.0.0.1 -p 5432 -U postgres; then
+              echo "Postgres ready"
+              break
+            fi
             echo "Postgres not ready yet, attempt $i/60"
             sleep 2
           done
-          pg_isready -h 127.0.0.1 -p 5432 -U postgres || (echo "Postgres not ready after retries" && docker ps --format "table {{.Image}}\t{{.Names}}\t{{.Status}}" && docker logs $(docker ps -q --filter ancestor=postgres:16) || true && exit 1)
+
+          if ! pg_isready -h 127.0.0.1 -p 5432 -U postgres; then
+            echo "Postgres not ready after retries — docker ps / logs:"
+            docker ps --format "table {{.Image}}\t{{.Names}}\t{{.Status}}"
+            CONTAINER=$(docker ps -q --filter ancestor=postgres:16 | head -n1) || true
+            if [ -n "$CONTAINER" ]; then
+              echo "---- Postgres logs ----"
+              docker logs "$CONTAINER" || true
+              echo "---- End Postgres logs ----"
+            fi
+            exit 1
+          fi
 
       - name: Debug DB connection (quick check)
         run: |
@@ -87,8 +101,14 @@ jobs:
       # this will be available. If the command still fails, add --schema path and debugging:
       - name: Apply Prisma schema (explicit, will show errors)
         run: |
-          npx prisma db push --accept-data-loss --schema=./prisma/schema.prisma
-        continue-on-error: false
+          set -euo pipefail
+          echo "Final DB connectivity check before prisma db push..."
+          PGPASSWORD=postgres_secure_pass psql -h 127.0.0.1 -U postgres -c '\l'
+          echo "Running prisma db push (will print errors if any)..."
+          # enable Prisma debug logging for more details if it fails
+          PRISMA_LOG_LEVEL=debug npx prisma db push --accept-data-loss --schema=./prisma/schema.prisma
+        env:
+          DATABASE_URL: ${{ env.DATABASE_URL }}
 
       - name: Run Linter
         run: npm run lint
