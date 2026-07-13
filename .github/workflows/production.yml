@@ -18,10 +18,10 @@ jobs:
           POSTGRES_PASSWORD: postgres_secure_pass
           POSTGRES_DB: interq_test
         options: >-
-          --health-cmd pg_isready
+          --health-cmd "pg_isready -U postgres"
           --health-interval 10s
           --health-timeout 5s
-          --health-retries 5
+          --health-retries 10
 
       redis:
         image: redis:7-alpine
@@ -53,11 +53,11 @@ jobs:
         env:
           PGPASSWORD: postgres_secure_pass
         run: |
-          for i in {1..30}; do
-            pg_isready -h localhost -p 5432 -U postgres && break
-            sleep 1
+          for i in {1..60}; do
+            pg_isready -h 127.0.0.1 -p 5432 -U postgres && break
+            sleep 2
           done
-          pg_isready -h localhost -p 5432 -U postgres || (echo "Postgres not ready" && exit 1)
+          pg_isready -h 127.0.0.1 -p 5432 -U postgres || (echo "Postgres not ready" && exit 1)
 
       - name: Generate Prisma Client
         run: npx prisma generate
