@@ -1,6 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
-import { Github, Twitter, MessageSquare } from 'lucide-react';
+
 
 export function Footer() {
   const footerLinks = [

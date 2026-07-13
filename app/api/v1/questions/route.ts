@@ -10,7 +10,7 @@ export async function GET(req: NextRequest) {
   try {
     // 1. Rate Limiting Check: 60 calls per minute per IP
     const forwardedFor = req.headers.get('x-forwarded-for');
-    const ip = req.ip ?? (forwardedFor ? forwardedFor.split(',')[0].trim() : '127.0.0.1');
+    const ip = forwardedFor ? forwardedFor.split(',')[0].trim() : '127.0.0.1';
     const rateLimitKey = `ratelimit:${ip}:get_questions`;
     const limited = await isRateLimited(rateLimitKey, 60, 60);
     if (limited) {
