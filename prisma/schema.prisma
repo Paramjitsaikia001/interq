@@ -1,0 +1,167 @@
+datasource db {
+  provider = "postgresql"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  user
+  admin
+}
+
+enum Difficulty {
+  Easy
+  Medium
+  Hard
+}
+
+enum ExperienceLevel {
+  entry
+  mid
+  senior
+  staff
+}
+
+model User {
+  id             String          @id @db.VarChar(128)
+  email          String          @unique @db.VarChar(255)
+  name           String          @db.VarChar(100)
+  role           Role            @default(user)
+  avatarUrl      String?         @map("avatar_url") @db.VarChar(512)
+  bio            String?         @db.Text
+  title          String?         @db.VarChar(100)
+  company        String?         @db.VarChar(100)
+  reputation     Int             @default(0)
+  createdAt      DateTime        @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime        @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt      DateTime?       @map("deleted_at") @db.Timestamptz
+
+  questions      Question[]
+  answers        Answer[]
+  askedMatches   AskedMatch[]
+  bookmarks      Bookmark[]
+  notifications  Notification[]
+  moderationLogs ModerationLog[]
+
+  @@map("users")
+}
+
+model Company {
+  id                 String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name               String     @unique @db.VarChar(100)
+  slug               String     @unique @db.VarChar(100)
+  logoUrl            String?    @map("logo_url") @db.VarChar(512)
+  description        String     @db.Text
+  website            String     @db.VarChar(255)
+  industry           String     @db.VarChar(100)
+  location           String     @db.VarChar(100)
+  employeeCount      String     @map("employee_count") @db.VarChar(50)
+  rating             Decimal    @default(0.00) @db.Decimal(3, 2)
+  createdAt          DateTime   @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt          DateTime   @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt          DateTime?  @map("deleted_at") @db.Timestamptz
+
+  questions          Question[]
+
+  @@map("companies")
+}
+
+model Question {
+  id              String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title           String          @db.VarChar(255)
+  content         String          @db.Text
+  role            String          @db.VarChar(100)
+  experienceLevel ExperienceLevel @map("experience_level")
+  interviewRound  String          @map("interview_round") @db.VarChar(100)
+  askedYear       Int             @map("asked_year") @db.SmallInt
+  difficulty      Difficulty
+  tags            String[]        @db.VarChar(50)
+  userId          String          @map("user_id") @db.VarChar(128)
+  companyId       String          @map("company_id") @db.Uuid
+  createdAt       DateTime        @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime        @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt       DateTime?       @map("deleted_at") @db.Timestamptz
+
+  user            User            @relation(fields: [userId], references: [id], onDelete: Restrict)
+  company         Company         @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  answers         Answer[]
+  askedMatches    AskedMatch[]
+  bookmarks       Bookmark[]
+
+  upvote          Int             @default(0)
+  upvoteUserIds   String[]        @map("upvote_userid") @db.VarChar(128)
+
+  @@map("questions")
+}
+
+model Answer {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  content    String    @db.Text
+  questionId String    @map("question_id") @db.Uuid
+  userId     String    @map("user_id") @db.VarChar(128)
+  isAccepted Boolean   @default(false) @map("is_accepted")
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt  DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt  DateTime? @map("deleted_at") @db.Timestamptz
+
+  question   Question  @relation(fields: [questionId], references: [id], onDelete: Restrict)
+  user       User      @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  upvote      Int       @default(0)
+  upvoteUserIds String[] @map("upvote_userid") @db.VarChar(128)
+
+  @@map("answers")
+}
+
+model AskedMatch {
+  userId     String   @map("user_id") @db.VarChar(128)
+  questionId String   @map("question_id") @db.Uuid
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@id([userId, questionId])
+  @@map("asked_matches")
+}
+
+model Bookmark {
+  userId     String   @map("user_id") @db.VarChar(128)
+  questionId String   @map("question_id") @db.Uuid
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@id([userId, questionId])
+  @@map("bookmarks")
+}
+
+model Notification {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String   @map("user_id") @db.VarChar(128)
+  type      String   @db.VarChar(30)
+  title     String   @db.VarChar(150)
+  message   String   @db.Text
+  link      String   @db.VarChar(255)
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}
+
+model ModerationLog {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  adminId   String   @map("admin_id") @db.VarChar(128)
+  action    String   @db.VarChar(50)
+  details   Json
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  admin     User     @relation(fields: [adminId], references: [id], onDelete: Restrict)
+
+  @@map("moderation_logs")
+}
