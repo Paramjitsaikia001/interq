@@ -9,10 +9,14 @@ export const metadata: Metadata = {
   },
 };
 
+import { Suspense } from 'react';
+
 export default function QuestionsPage() {
   return (
     <div className="flex-1 flex flex-col">
-      <QuestionsListingClient />
+      <Suspense fallback={<div>Loading questions...</div>}>
+        <QuestionsListingClient />
+      </Suspense>
     </div>
   );
 }
