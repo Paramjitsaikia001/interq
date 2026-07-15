@@ -1,6 +1,6 @@
-const { PrismaClient } = require('@prisma/client');
-const fs = require('fs');
-const path = require('path');
+import { PrismaClient } from '@prisma/client';
+import fs from 'fs';
+import  path from 'path';
 
 // Load DATABASE_URL from project's .env
 const envPath = path.join(__dirname, '..', '.env');

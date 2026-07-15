@@ -1,5 +1,6 @@
-require('dotenv').config();
-const { PrismaClient } = require('@prisma/client');
+import dotenv from 'dotenv';
+dotenv.config();
+import { PrismaClient } from './generated';
 const prisma = process.env.DATABASE_URL.startsWith('postgres')
   ? new PrismaClient({ datasources: { db: { url: process.env.DATABASE_URL } } })
   : new PrismaClient({ accelerateUrl: process.env.DATABASE_URL });

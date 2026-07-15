@@ -24,35 +24,45 @@ export const metadata: Metadata = {
 export const revalidate = 3600; // Cache the page for 1 hour
 
 async function StatsSection() {
-  const [questions, answers, companies, users, bookmarks, verifiedQuestions] = await Promise.all([
-    prisma.question.count(),
-    prisma.answer.count(),
-    prisma.company.count(),
-    prisma.user.count(),
-    prisma.bookmark.count(),
-    prisma.question.count({
-      where: {
-        askedMatches: {
-          some: {},
+  let stats = {
+    questions: 0,
+    answers: 0,
+    companies: 0,
+    users: 0,
+    bookmarks: 0,
+    verifiedPercentage: 0,
+  };
+
+  try {
+    const [questions, answers, companies, users, bookmarks, verifiedQuestions] = await Promise.all([
+      prisma.question.count(),
+      prisma.answer.count(),
+      prisma.company.count(),
+      prisma.user.count(),
+      prisma.bookmark.count(),
+      prisma.question.count({
+        where: {
+          askedMatches: {
+            some: {},
+          },
         },
-      },
-    }),
-  ]);
+      }),
+    ]);
 
-  const verifiedPercentage = questions > 0 ? Math.round((verifiedQuestions / questions) * 100) : 0;
+    const verifiedPercentage = questions > 0 ? Math.round((verifiedQuestions / questions) * 100) : 0;
+    stats = {
+      questions,
+      answers,
+      companies,
+      users,
+      bookmarks,
+      verifiedPercentage,
+    };
+  } catch (error) {
+    console.warn('Warning: Failed to fetch stats during build/prerender. Using fallback values.', error);
+  }
 
-  return (
-    <Stats
-      stats={{
-        questions,
-        answers,
-        companies,
-        users,
-        bookmarks,
-        verifiedPercentage,
-      }}
-    />
-  );
+  return <Stats stats={stats} />;
 }
 
 export default function AboutPage() {
