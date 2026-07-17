@@ -95,6 +95,15 @@ export async function POST(req: NextRequest) {
 
   } catch (error: any) {
     console.error('Error in auth sync:', error);
-    return NextResponse.json({ error: 'Unauthorized: ' + (error.message || 'Token verification failed') }, { status: 401 });
+
+    const message = error?.message || 'Token verification failed';
+    const isAuthError =
+      error?.codePrefix === 'auth' ||
+      /token|credential|unauthorized|audience|issuer/i.test(message);
+
+    return NextResponse.json(
+      { error: isAuthError ? `Unauthorized: ${message}` : `Internal Server Error: ${message}` },
+      { status: isAuthError ? 401 : 500 },
+    );
   }
 }

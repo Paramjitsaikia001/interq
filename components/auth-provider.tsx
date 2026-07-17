@@ -39,7 +39,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               reputation: dbUser.reputation,
             }, dbUser.role, token);
           } else {
-            console.error('Failed to sync auth user');
+            const errorBody = await response.text().catch(() => '');
+            console.error('Failed to sync auth user', response.status, errorBody);
             clearAuth();
           }
         } catch (error) {
