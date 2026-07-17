@@ -1,10 +1,12 @@
-const { createServer } = require('http');
-const { parse } = require('url');
-const next = require('next');
-const { Server } = require('socket.io');
-const Redis = require('ioredis');
-const { getApps, initializeApp, cert } = require('firebase-admin/app');
-const { getAuth } = require('firebase-admin/auth');
+
+
+import  { createServer } from 'http';
+import { parse } from 'url';
+import next from 'next';
+import  { Server } from 'socket.io';
+import  Redis from 'ioredis';
+import { getApps, initializeApp, cert } from 'firebase-admin/app';
+import { getAuth } from 'firebase-admin/auth';
 
 const dev = process.env.NODE_ENV !== 'production';
 const app = next({ dev });
@@ -40,8 +42,9 @@ app.prepare().then(() => {
 
   const io = new Server(server, {
     cors: {
-      origin: '*',
+      origin: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
       methods: ['GET', 'POST'],
+      credentials: true,
     },
   });
 

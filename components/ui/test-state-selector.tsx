@@ -6,6 +6,11 @@ import { Settings, ShieldAlert, UserCheck, Eye, Moon, Sun } from 'lucide-react';
 import { Button } from './button';
 
 export function TestStateSelector() {
+  // Only render in development mode
+  if (process.env.NODE_ENV !== 'development') {
+    return null;
+  }
+
   const { appState, userRole, setAppState, setUserRole } = useSimulationStore();
   const [isOpen, setIsOpen] = React.useState(false);
   const [isDarkMode, setIsDarkMode] = React.useState(false);

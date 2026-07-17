@@ -28,7 +28,11 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     try {
       const cached = await redis.get(cacheKey);
       if (cached) {
-        coreDetail = JSON.parse(cached);
+        try {
+          coreDetail = JSON.parse(cached);
+        } catch (parseErr) {
+          console.warn('Failed to parse cached question detail, re-fetching from DB:', parseErr);
+        }
       }
     } catch (err) {
       console.error('Redis cache read error:', err);

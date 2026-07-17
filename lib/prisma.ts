@@ -4,8 +4,18 @@ const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };
 
-export const prisma = globalForPrisma.prisma ?? new PrismaClient({
-  accelerateUrl: process.env.DATABASE_URL || 'prisma+postgres://localhost:51213/?api_key=placeholder',
-});
+const accelerateUrl = process.env.DATABASE_URL;
+if (!accelerateUrl) {
+  throw new Error('DATABASE_URL environment variable is not set. This is required for Prisma Accelerate.');
+}
 
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
+export const prisma =
+  globalForPrisma.prisma ??
+  new PrismaClient({
+    accelerateUrl,
+    log: ['error', 'warn'],
+  });
+
+if (process.env.NODE_ENV !== 'production') {
+  globalForPrisma.prisma = prisma;
+}

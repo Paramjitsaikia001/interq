@@ -32,7 +32,11 @@ export async function GET(req: NextRequest) {
     try {
       const cached = await redis.get(cacheKey);
       if (cached) {
-        return NextResponse.json(JSON.parse(cached), { status: 200 });
+        try {
+          return NextResponse.json(JSON.parse(cached), { status: 200 });
+        } catch (parseErr) {
+          console.warn('Failed to parse cached questions data, re-fetching from DB:', parseErr);
+        }
       }
     } catch (err) {
       console.error('Redis read error:', err);
