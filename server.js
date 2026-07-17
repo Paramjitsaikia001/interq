@@ -19,13 +19,21 @@ if (!getApps().length) {
   const privateKey = process.env.FIREBASE_PRIVATE_KEY;
 
   if (projectId && clientEmail && privateKey) {
-    initializeApp({
-      credential: cert({
-        projectId,
-        clientEmail,
-        privateKey: privateKey.replace(/\\n/g, '\n'),
-      }),
-    });
+    try {
+      initializeApp({
+        credential: cert({
+          projectId,
+          clientEmail,
+          privateKey: privateKey.replace(/\\n/g, '\n'),
+        }),
+      });
+    } catch (error) {
+      console.warn(
+        'Firebase Admin credential init failed; falling back to projectId-only app.',
+        error,
+      );
+      initializeApp({ projectId });
+    }
   } else {
     initializeApp({
       projectId,

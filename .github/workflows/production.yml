@@ -119,5 +119,3 @@ jobs:
         env:
           NEXT_TELEMETRY_DISABLED: 1
           FIREBASE_PROJECT_ID: interq-test-id
-          FIREBASE_CLIENT_EMAIL: firebase-adminsdk-fbsvc@interq-test-id.iam.gserviceaccount.com
-          FIREBASE_PRIVATE_KEY: "-----BEGIN PRIVATE KEY-----\nMIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQDIK6b8xn3KOlTI\n-----END PRIVATE KEY-----\n"

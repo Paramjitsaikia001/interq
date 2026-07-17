@@ -1,24 +1,35 @@
-import { getApps, initializeApp, cert } from 'firebase-admin/app';
+import { getApps, initializeApp, cert, type App } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 
-if (!getApps().length) {
+function initFirebaseAdmin(): App {
+  if (getApps().length) {
+    return getApps()[0]!;
+  }
+
   const projectId = process.env.FIREBASE_PROJECT_ID;
   const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
   const privateKey = process.env.FIREBASE_PRIVATE_KEY;
 
   if (projectId && clientEmail && privateKey) {
-    initializeApp({
-      credential: cert({
-        projectId,
-        clientEmail,
-        privateKey: privateKey.replace(/\\n/g, '\n'),
-      }),
-    });
-  } else {
-    initializeApp({
-      projectId: projectId,
-    });
+    try {
+      return initializeApp({
+        credential: cert({
+          projectId,
+          clientEmail,
+          privateKey: privateKey.replace(/\\n/g, '\n'),
+        }),
+      });
+    } catch (error) {
+      console.warn(
+        'Firebase Admin credential init failed; falling back to projectId-only app.',
+        error,
+      );
+    }
   }
+
+  return initializeApp({
+    projectId,
+  });
 }
 
-export const adminAuth = getAuth();
+export const adminAuth = getAuth(initFirebaseAdmin());
