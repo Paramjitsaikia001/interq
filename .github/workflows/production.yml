@@ -93,7 +93,7 @@ jobs:
         # DATABASE_URL is provided at job-level (see env above)
 
       - name: Verify Prisma Migration Setup
-        run: npx prisma db push --skip-generate
+        run: npx prisma db push
         # DATABASE_URL provided at job-level
 
       # If you have another step or npm script that runs prisma db push --accept-data-loss,
