@@ -88,11 +88,12 @@ export async function GET(req: NextRequest) {
       .sort((a, b) => b.count - a.count)
       .slice(0, 5);
 
-    const maxTagCount = Math.max(...topTags.map(t => t.count), 1);
-    const topTagsWithhttps://railway.com/project/f0371d06-38fe-4702-8e2e-6e1eaddcec4a/service/8adb6119-cca6-4962-83b2-ead3d3452dac/variables?environmentId=7bf88fc6-6a85-4311-ba17-1e3b352bda39Percentage = topTags.map(t => ({
-      ...t,
-      percentage: Math.round((t.count / maxTagCount) * 100)
-    }));
+   const maxTagCount = Math.max(...topTags.map(t => t.count), 1);
+
+const topTagsWithPercentage = topTags.map(t => ({
+  ...t,
+  percentage: Math.round((t.count / maxTagCount) * 100),
+}));
 
     return NextResponse.json({
       metrics: {
