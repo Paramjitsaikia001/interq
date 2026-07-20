@@ -195,6 +195,10 @@ export default function CompanyManagement() {
       toast.success('Company restored', 'The company is active again.');
     } catch (err: any) {
       toast.error('Restore failed', err.message);
+    }
+  };
+
+  const startEdit = (company: DBCompany) => {
     setEditingCompany(company);
     setShowAddForm(false);
     setName(company.name);
