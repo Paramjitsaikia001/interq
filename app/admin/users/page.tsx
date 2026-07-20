@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Avatar } from '@/components/ui/avatar';
 import { StateWrapper } from '@/components/ui/state-wrapper';
 import { useSimulationStore } from '@/lib/state-store';
+import { toast } from '@/lib/toast';
 import { ShieldCheck, UserMinus, ShieldAlert, Check } from 'lucide-react';
 
 interface DBUser {
@@ -71,8 +72,9 @@ export default function UserManagement() {
 
       // Refresh list
       await fetchUsers();
+      toast.success('User updated', `Action "${action.replace('_', ' ')}" completed successfully.`);
     } catch (err: any) {
-      alert(err.message);
+      toast.error('Update failed', err.message);
     }
   };
 

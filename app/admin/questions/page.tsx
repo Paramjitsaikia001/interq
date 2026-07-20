@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { StateWrapper } from '@/components/ui/state-wrapper';
 import { useSimulationStore } from '@/lib/state-store';
+import { toast } from '@/lib/toast';
 import { Check, Trash2, ShieldAlert, GitMerge, RotateCcw, AlertTriangle } from 'lucide-react';
 
 interface DBQuestion {
@@ -85,19 +86,20 @@ export default function QuestionModeration() {
       }
 
       await fetchQuestions();
+      toast.success('Question updated', `Action "${action.replace('_', ' ')}" completed successfully.`);
     } catch (err: any) {
-      alert(err.message);
+      toast.error('Moderation failed', err.message);
     }
   };
 
   const handleMerge = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!sourceId || !targetId) {
-      alert('Please specify both source and target questions');
+      toast.error('Merge failed', 'Please specify both source and target questions');
       return;
     }
     if (sourceId === targetId) {
-      alert('Source and target questions cannot be the same');
+      toast.error('Merge failed', 'Source and target questions cannot be the same');
       return;
     }
 
@@ -124,12 +126,12 @@ export default function QuestionModeration() {
         throw new Error(data.error || 'Failed to merge questions');
       }
 
-      alert('Questions merged successfully!');
+      toast.success('Questions merged', 'Duplicate question was merged into the target.');
       setSourceId('');
       setTargetId('');
       await fetchQuestions();
     } catch (err: any) {
-      alert(err.message);
+      toast.error('Merge failed', err.message);
     } finally {
       setMergeLoading(false);
     }

@@ -4,6 +4,7 @@ import * as React from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useSimulationStore } from '@/lib/state-store';
+import { toast } from '@/lib/toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -232,7 +233,7 @@ export default function QuestionsListing() {
     }
     const targetQ = questions.find(q => q.id === qId);
     if (targetQ && targetQ.userId === currentUser?.id) {
-      alert('You cannot upvote your own question.');
+      toast.error('Cannot upvote', 'You cannot upvote your own question.');
       return;
     }
 

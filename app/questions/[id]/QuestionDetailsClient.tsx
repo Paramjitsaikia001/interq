@@ -4,6 +4,7 @@ import * as React from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useSimulationStore } from '@/lib/state-store';
+import { toast } from '@/lib/toast';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -90,7 +91,7 @@ export default function QuestionDetails() {
       return;
     }
     if (question && question.userId === currentUser?.id) {
-      alert('You cannot upvote your own question.');
+      toast.error('Cannot upvote', 'You cannot upvote your own question.');
       return;
     }
     try {
@@ -106,7 +107,7 @@ export default function QuestionDetails() {
         setLocalUpvotes(data.upvotesCount);
       } else {
         const errData = await res.json();
-        alert(errData.error || 'Failed to toggle vote.');
+        toast.error('Vote failed', errData.error || 'Failed to toggle vote.');
       }
     } catch (err) {
       console.error('Error voting on question:', err);
@@ -178,7 +179,7 @@ export default function QuestionDetails() {
         }));
       } else {
         const errData = await res.json();
-        alert(errData.error || 'Failed to toggle upvote on answer.');
+        toast.error('Vote failed', errData.error || 'Failed to toggle upvote on answer.');
       }
     } catch (err) {
       console.error('Error upvoting answer:', err);
@@ -201,9 +202,10 @@ export default function QuestionDetails() {
       if (res.ok) {
         setAnswerInput('');
         fetchQuestionAndAnswers();
+        toast.success('Answer posted', 'Your answer was submitted successfully.');
       } else {
         const errData = await res.json();
-        alert(errData.error || 'Failed to submit answer.');
+        toast.error('Submission failed', errData.error || 'Failed to submit answer.');
       }
     } catch (err) {
       console.error('Error submitting answer:', err);

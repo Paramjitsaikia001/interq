@@ -1,8 +1,10 @@
 import { PrismaClient } from '../prisma/generated/client';
 import { PrismaPg } from '@prisma/adapter-pg';
+import { Pool } from 'pg';
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
+  pgPool: Pool | undefined;
 };
 
 function createPrismaClient(databaseUrl: string) {
@@ -16,14 +18,19 @@ function createPrismaClient(databaseUrl: string) {
     });
   }
 
-  const adapter = new PrismaPg({ connectionString: databaseUrl });
+  const pool = globalForPrisma.pgPool ?? new Pool({ connectionString: databaseUrl });
+  if (!globalForPrisma.pgPool) {
+    globalForPrisma.pgPool = pool;
+  }
+
+  const adapter = new PrismaPg(pool);
   return new PrismaClient({
     adapter,
     log: ['error', 'warn'],
   });
 }
 
-function getPrismaClient() {
+function getPrismaClient(): PrismaClient {
   if (globalForPrisma.prisma) {
     return globalForPrisma.prisma;
   }
@@ -33,17 +40,14 @@ function getPrismaClient() {
     throw new Error('DATABASE_URL environment variable is not set.');
   }
 
-  const client = createPrismaClient(databaseUrl);
-
-  if (process.env.NODE_ENV !== 'production') {
-    globalForPrisma.prisma = client;
-  }
-
-  return client;
+  globalForPrisma.prisma = createPrismaClient(databaseUrl);
+  return globalForPrisma.prisma;
 }
 
 export const prisma = new Proxy({} as PrismaClient, {
   get(_target, prop) {
-    return Reflect.get(getPrismaClient(), prop);
+    const client = getPrismaClient();
+    const value = Reflect.get(client, prop, client);
+    return typeof value === 'function' ? value.bind(client) : value;
   },
 });

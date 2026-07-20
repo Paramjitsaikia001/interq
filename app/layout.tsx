@@ -6,6 +6,7 @@ import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
 import { TestStateSelector } from "@/components/ui/test-state-selector";
 import { AuthProvider } from "@/components/auth-provider";
+import { Toaster } from "@/components/ui/toaster";
 import { readFirebaseConfig } from "@/lib/firebase-config";
 import { SocketProvider } from "@/components/socket-provider";
 
@@ -105,6 +106,7 @@ export default function RootLayout({
             </main>
             <Footer />
             <TestStateSelector />
+            <Toaster />
           </SocketProvider>
         </AuthProvider>
       </body>

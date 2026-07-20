@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { StateWrapper } from '@/components/ui/state-wrapper';
 import { useSimulationStore } from '@/lib/state-store';
+import { toast } from '@/lib/toast';
 import { Building2, Plus, Edit2, Trash2, RotateCcw, AlertTriangle, ExternalLink } from 'lucide-react';
 
 interface DBCompany {
@@ -100,8 +101,9 @@ export default function CompanyManagement() {
       resetForm();
       setShowAddForm(false);
       await fetchCompanies();
+      toast.success('Company created', 'The company was added successfully.');
     } catch (err: any) {
-      alert(err.message);
+      toast.error('Create failed', err.message);
     }
   };
 
@@ -135,8 +137,9 @@ export default function CompanyManagement() {
       resetForm();
       setEditingCompany(null);
       await fetchCompanies();
+      toast.success('Company updated', 'Changes were saved successfully.');
     } catch (err: any) {
-      alert(err.message);
+      toast.error('Update failed', err.message);
     }
   };
 
@@ -162,8 +165,9 @@ export default function CompanyManagement() {
       }
 
       await fetchCompanies();
+      toast.success('Company deleted', 'The company was soft-deleted.');
     } catch (err: any) {
-      alert(err.message);
+      toast.error('Delete failed', err.message);
     }
   };
 
@@ -188,12 +192,9 @@ export default function CompanyManagement() {
       }
 
       await fetchCompanies();
+      toast.success('Company restored', 'The company is active again.');
     } catch (err: any) {
-      alert(err.message);
-    }
-  };
-
-  const startEdit = (company: DBCompany) => {
+      toast.error('Restore failed', err.message);
     setEditingCompany(company);
     setShowAddForm(false);
     setName(company.name);

@@ -35,61 +35,40 @@ export async function POST(
       return NextResponse.json({ error: 'Forbidden: You cannot upvote your own answer' }, { status: 403 });
     }
 
-    // 4. Toggle Upvote in a transaction
-    let action: 'added' | 'removed' = 'added';
-    let upvotesCount = 0;
+    // 4. Toggle upvote (batch transaction — reliable with PrismaPg adapter)
+    const ans = await prisma.answer.findUnique({ where: { id: answerId } });
+    if (!ans) {
+      return NextResponse.json({ error: 'Answer not found' }, { status: 404 });
+    }
 
-    await prisma.$transaction(async (tx) => {
-      const ans = await tx.answer.findUnique({
-        where: { id: answerId }
-      });
-      if (!ans) throw new Error('Answer not found');
+    const existing = ans.upvoteUserIds.includes(user.id);
+    const action: 'added' | 'removed' = existing ? 'removed' : 'added';
+    const upvotesCount = existing ? Math.max(0, ans.upvote - 1) : ans.upvote + 1;
+    const upvoteUserIds = existing
+      ? ans.upvoteUserIds.filter((uid) => uid !== user.id)
+      : [...ans.upvoteUserIds, user.id];
 
-      const existing = ans.upvoteUserIds.includes(user.id);
-
-      if (existing) {
-        // Remove Vote
-        upvotesCount = Math.max(0, ans.upvote - 1);
-        await tx.answer.update({
-          where: { id: answerId },
-          data: {
-            upvote: upvotesCount,
-            upvoteUserIds: ans.upvoteUserIds.filter(uid => uid !== user.id)
-          }
-        });
-        action = 'removed';
-
-        // Decrement author reputation (minimum 0)
-        const author = await tx.user.findUnique({ where: { id: answer.userId } });
-        if (author) {
-          const newRep = Math.max(0, author.reputation - 1);
-          await tx.user.update({
+    const author = await prisma.user.findUnique({ where: { id: answer.userId } });
+    const reputationUpdate =
+      author && existing
+        ? prisma.user.update({
             where: { id: answer.userId },
-            data: { reputation: newRep }
-          });
-        }
-      } else {
-        // Add Vote
-        upvotesCount = ans.upvote + 1;
-        await tx.answer.update({
-          where: { id: answerId },
-          data: {
-            upvote: upvotesCount,
-            upvoteUserIds: [...ans.upvoteUserIds, user.id]
-          }
-        });
-        action = 'added';
+            data: { reputation: Math.max(0, author.reputation - 1) },
+          })
+        : author
+          ? prisma.user.update({
+              where: { id: answer.userId },
+              data: { reputation: author.reputation + 1 },
+            })
+          : null;
 
-        // Increment author reputation
-        const author = await tx.user.findUnique({ where: { id: answer.userId } });
-        if (author) {
-          await tx.user.update({
-            where: { id: answer.userId },
-            data: { reputation: author.reputation + 1 }
-          });
-        }
-      }
-    });
+    await prisma.$transaction([
+      prisma.answer.update({
+        where: { id: answerId },
+        data: { upvote: upvotesCount, upvoteUserIds },
+      }),
+      ...(reputationUpdate ? [reputationUpdate] : []),
+    ]);
 
     // Send real-time notification if upvote was added
     if (action === 'added' && answer.userId !== user.id) {
