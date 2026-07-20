@@ -1,10 +1,12 @@
+import { config as loadEnv } from 'dotenv';
 
+loadEnv();
 
-import  { createServer } from 'http';
+import { createServer } from 'http';
 import { parse } from 'url';
 import next from 'next';
-import  { Server } from 'socket.io';
-import  Redis from 'ioredis';
+import { Server } from 'socket.io';
+import Redis from 'ioredis';
 import { getApps, initializeApp, cert } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 
@@ -12,9 +14,13 @@ const dev = process.env.NODE_ENV !== 'production';
 const app = next({ dev });
 const handle = app.getRequestHandler();
 
-// Initialize Firebase Admin SDK for Socket authentication
-if (!getApps().length) {
-  const projectId = process.env.FIREBASE_PROJECT_ID;
+function initSocketFirebaseAdmin() {
+  if (getApps().some((app) => app.name === '[DEFAULT]')) {
+    return getAuth();
+  }
+
+  const projectId =
+    process.env.FIREBASE_PROJECT_ID || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
   const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
   const privateKey = process.env.FIREBASE_PRIVATE_KEY;
 
@@ -27,22 +33,27 @@ if (!getApps().length) {
           privateKey: privateKey.replace(/\\n/g, '\n'),
         }),
       });
+      return getAuth();
     } catch (error) {
       console.warn(
         'Firebase Admin credential init failed; falling back to projectId-only app.',
         error,
       );
-      initializeApp({ projectId });
     }
-  } else {
-    initializeApp({
-      projectId,
-    });
   }
+
+  if (!projectId) {
+    throw new Error(
+      'Firebase Admin is not configured. Set FIREBASE_PROJECT_ID and service account credentials in .env.',
+    );
+  }
+
+  initializeApp({ projectId });
+  return getAuth();
 }
-const adminAuth = getAuth();
 
 app.prepare().then(() => {
+  const adminAuth = initSocketFirebaseAdmin();
   const server = createServer((req, res) => {
     const parsedUrl = parse(req.url, true);
     handle(req, res, parsedUrl);
