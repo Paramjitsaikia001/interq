@@ -16,6 +16,10 @@ COPY . .
 RUN npx prisma generate
 
 # Build Next.js
+# Railway only exposes service vars to Docker builds when declared as ARG.
+ARG DATABASE_URL
+
+ENV DATABASE_URL=${DATABASE_URL}
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
 RUN npm run build
