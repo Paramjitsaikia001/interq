@@ -10,7 +10,7 @@ import { StateWrapper } from '@/components/ui/state-wrapper';
 import { Lock, AtSign, ShieldCheck } from 'lucide-react';
 
 import { signInWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import { getFirebaseAuth } from '@/lib/firebase';
 import { loginWithGoogle } from '@/lib/auth-client';
 
 export default function Login() {
@@ -49,7 +49,7 @@ export default function Login() {
     setError('');
     setLoading(true);
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      await signInWithEmailAndPassword(getFirebaseAuth(), email, password);
       router.push('/questions');
     } catch (err: any) {
       console.error(err);

@@ -2,14 +2,14 @@
 
 import * as React from 'react';
 import { onAuthStateChanged } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import { getFirebaseAuth } from '@/lib/firebase';
 import { useSimulationStore } from '@/lib/state-store';
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const { setFirebaseUser, clearAuth } = useSimulationStore();
 
   React.useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+    const unsubscribe = onAuthStateChanged(getFirebaseAuth(), async (firebaseUser) => {
       if (firebaseUser) {
         try {
           const token = await firebaseUser.getIdToken();

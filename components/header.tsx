@@ -40,8 +40,8 @@ export function Header() {
   const handleLogout = async () => {
     try {
       const { signOut } = await import('firebase/auth');
-      const { auth } = await import('@/lib/firebase');
-      await signOut(auth);
+      const { getFirebaseAuth } = await import('@/lib/firebase');
+      await signOut(getFirebaseAuth());
     } catch (error) {
       console.error('Error signing out:', error);
     }

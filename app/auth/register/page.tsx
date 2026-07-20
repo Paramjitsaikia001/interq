@@ -10,7 +10,7 @@ import { StateWrapper } from '@/components/ui/state-wrapper';
 import { ShieldCheck, Code2 } from 'lucide-react';
 
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import { getFirebaseAuth } from '@/lib/firebase';
 import { loginWithGoogle } from '@/lib/auth-client';
 
 export default function Register() {
@@ -50,7 +50,7 @@ export default function Register() {
     setError('');
     setLoading(true);
     try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const userCredential = await createUserWithEmailAndPassword(getFirebaseAuth(), email, password);
       if (name) {
         await updateProfile(userCredential.user, { displayName: name });
       }

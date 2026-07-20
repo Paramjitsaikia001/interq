@@ -1,5 +1,5 @@
 import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import { getFirebaseAuth } from '@/lib/firebase';
 
 /**
  * Performs Google sign-in using Firebase Auth, retrieves ID token.
@@ -10,7 +10,7 @@ import { auth } from '@/lib/firebase';
  */
 export async function loginWithGoogle(): Promise<string> {
   const provider = new GoogleAuthProvider();
-  const result = await signInWithPopup(auth, provider);
+  const result = await signInWithPopup(getFirebaseAuth(), provider);
   const firebaseUser = result.user;
   // Force refresh to ensure we have a fresh token
   const idToken = await firebaseUser.getIdToken(true);

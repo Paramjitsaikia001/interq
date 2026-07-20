@@ -1,30 +1,39 @@
-import { initializeApp, getApps, getApp, type FirebaseOptions } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
+'use client';
 
-function requireEnv(name: string): string {
-  const value = process.env[name]?.trim();
-  if (!value) {
+import { initializeApp, getApps, getApp, type FirebaseApp, type FirebaseOptions } from 'firebase/app';
+import { getAuth, type Auth } from 'firebase/auth';
+
+declare global {
+  interface Window {
+    __FIREBASE_CONFIG__?: FirebaseOptions;
+  }
+}
+
+let firebaseApp: FirebaseApp | null = null;
+let firebaseAuth: Auth | null = null;
+
+function initFirebase(): Auth {
+  if (firebaseAuth) {
+    return firebaseAuth;
+  }
+
+  const config = window.__FIREBASE_CONFIG__;
+  if (!config?.apiKey) {
     throw new Error(
-      `Missing ${name}. Add it to .env (see .env.example) and restart the dev server.`,
+      'Firebase is not configured. Add NEXT_PUBLIC_FIREBASE_* variables to .env and restart the dev server.',
     );
   }
-  return value;
+
+  firebaseApp = getApps().length > 0 ? getApp() : initializeApp(config);
+  firebaseAuth = getAuth(firebaseApp);
+  return firebaseAuth;
 }
 
-function getFirebaseConfig(): FirebaseOptions {
-  return {
-    apiKey: requireEnv('NEXT_PUBLIC_FIREBASE_API_KEY'),
-    authDomain: requireEnv('NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN'),
-    projectId: requireEnv('NEXT_PUBLIC_FIREBASE_PROJECT_ID'),
-    storageBucket: requireEnv('NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET'),
-    messagingSenderId: requireEnv('NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID'),
-    appId: requireEnv('NEXT_PUBLIC_FIREBASE_APP_ID'),
-    measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
-  };
+export function getFirebaseAuth(): Auth {
+  return initFirebase();
 }
 
-const firebaseConfig = getFirebaseConfig();
-const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
-const auth = getAuth(app);
-
-export { app, auth };
+export function getFirebaseApp(): FirebaseApp {
+  initFirebase();
+  return firebaseApp!;
+}

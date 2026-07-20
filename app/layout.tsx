@@ -6,6 +6,7 @@ import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
 import { TestStateSelector } from "@/components/ui/test-state-selector";
 import { AuthProvider } from "@/components/auth-provider";
+import { readFirebaseConfig } from "@/lib/firebase-config";
 import { SocketProvider } from "@/components/socket-provider";
 
 const geistSans = Geist({
@@ -60,6 +61,8 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const firebaseConfig = readFirebaseConfig();
+
   return (
     <html
       lang="en"
@@ -67,6 +70,13 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <head>
+        <Script
+          id="firebase-config"
+          strategy="beforeInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `window.__FIREBASE_CONFIG__=${JSON.stringify(firebaseConfig)};`,
+          }}
+        />
         <Script
           id="theme-script"
           strategy="beforeInteractive"

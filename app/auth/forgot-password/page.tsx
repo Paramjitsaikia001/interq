@@ -9,7 +9,7 @@ import { StateWrapper } from '@/components/ui/state-wrapper';
 import { Mail, ArrowLeft, Send, CheckCircle2 } from 'lucide-react';
 
 import { sendPasswordResetEmail } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import { getFirebaseAuth } from '@/lib/firebase';
 
 export default function ForgotPassword() {
   const [email, setEmail] = React.useState('');
@@ -22,7 +22,7 @@ export default function ForgotPassword() {
     setError('');
     setLoading(true);
     try {
-      await sendPasswordResetEmail(auth, email);
+      await sendPasswordResetEmail(getFirebaseAuth(), email);
       setSubmitted(true);
     } catch (err: any) {
       console.error(err);
