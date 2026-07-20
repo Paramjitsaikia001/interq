@@ -1,6 +1,4 @@
-import { config as loadEnv } from 'dotenv';
-
-loadEnv();
+import 'dotenv/config';
 
 import { createServer } from 'http';
 import { parse } from 'url';
