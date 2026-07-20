@@ -13,6 +13,9 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
 # Generate Prisma client
+# Generate Prisma client
+RUN node -e "console.log('DATABASE_URL exists:', !!process.env.DATABASE_URL)"
+RUN npx prisma generate
 RUN npx prisma generate
 
 # Build Next.js
